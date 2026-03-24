@@ -5,40 +5,50 @@
 </head>
 <body>
 
-<h2>Simple Chat</h2>
+<h2>🔥 Simple Chat App</h2>
 
-<input id="username" placeholder="Enter name" />
-<input id="msg" placeholder="Message" />
+<input id="username" placeholder="Enter your name" />
+<br><br>
+
+<input id="msg" placeholder="Type message..." />
 <button onclick="sendMsg()">Send</button>
 
 <ul id="chat"></ul>
 
 <script>
-  // ✅ Correct WebSocket (works for LAN + WAN + Ngrok)
+  // 🌐 WebSocket (works for localhost + Render + Ngrok)
   const ws = new WebSocket(
     location.protocol === "https:" 
       ? `wss://${location.host}` 
       : `ws://${location.host}`
   );
 
-  ws.onopen = () => {
-    console.log("✅ Connected to server");
-  };
+  ws.onopen = () => console.log("✅ Connected");
+  ws.onerror = (err) => console.log("❌ Error", err);
 
+  // 📩 Receive messages
   ws.onmessage = (event) => {
     const li = document.createElement("li");
     li.textContent = event.data;
     document.getElementById("chat").appendChild(li);
   };
 
-  ws.onerror = (err) => {
-    console.log("❌ WebSocket error:", err);
-  };
-
+  // 📤 Send message
   function sendMsg() {
-    const input = document.getElementById("msg");
-    ws.send(input.value);
-    input.value = "";
+    const username = document.getElementById("username").value;
+    const message = document.getElementById("msg").value;
+
+    if (!username || !message) {
+      alert("Enter username and message");
+      return;
+    }
+
+    ws.send(JSON.stringify({
+      user: username,
+      text: message
+    }));
+
+    document.getElementById("msg").value = "";
   }
 </script>
 
