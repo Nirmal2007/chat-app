@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat App</title>
+</head>
+<body>
+
+<h2>Simple Chat</h2>
+
+<input id="msg" placeholder="Type message..." />
+<button onclick="sendMsg()">Send</button>
+
+<ul id="chat"></ul>
+
+<script>
+  // ✅ Correct WebSocket (works for LAN + WAN + Ngrok)
+  const ws = new WebSocket(
+    location.protocol === "https:" 
+      ? `wss://${location.host}` 
+      : `ws://${location.host}`
+  );
+
+  ws.onopen = () => {
+    console.log("✅ Connected to server");
+  };
+
+  ws.onmessage = (event) => {
+    const li = document.createElement("li");
+    li.textContent = event.data;
+    document.getElementById("chat").appendChild(li);
+  };
+
+  ws.onerror = (err) => {
+    console.log("❌ WebSocket error:", err);
+  };
+
+  function sendMsg() {
+    const input = document.getElementById("msg");
+    ws.send(input.value);
+    input.value = "";
+  }
+</script>
+
+</body>
+</html>
