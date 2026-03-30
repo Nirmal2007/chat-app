@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Messenger</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #121212;
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    ul {
+      text-align: left;
+    }
+
+    #typing {
+      color: #aaa;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Messenger</h2>
+
+  <input id="username" placeholder="Enter username" />
+  <button onclick="join()">Join</button>
+
+  <br>
+
+  <input id="msg" placeholder="Type message..." />
+  <button onclick="sendMsg()">Send</button>
+
+  <br>
+
+  <input id="privateUser" placeholder="Send to (username)" />
+  <button onclick="sendPrivate()">Private</button>
+
+  <p id="typing"></p>
+
+  <h3>Online Users</h3>
+  <ul id="users"></ul>
+
+  <h3>Chat</h3>
+  <ul id="chat"></ul>
+</div>
+
+<script>
+  const ws = new WebSocket(
+    location.protocol === "https:"
+      ? `wss://${location.host}`
+      : `ws://${location.host}`
+  );
+
+  let username = "";
+
+  function join() {
+    username = document.getElementById("username").value;
+    if (!username) return;
+
+    ws.send(JSON.stringify({
+      type: "join",
+      user: username
+    }));
+  }
+
+  function sendMsg() {
+    const input = document.getElementById("msg");
+    if (input.value.trim() === "") return;
+
+    ws.send(JSON.stringify({
+      type: "message",
+      user: username,
+      text: input.value
+    }));
+
+    input.value = "";
+  }
+
+  function sendPrivate() {
+    const input = document.getElementById("msg");
+    const toUser = document.getElementById("privateUser").value;
+
+    if (!input.value || !toUser) return;
+
+    ws.send(JSON.stringify({
+      type: "private",
+      user: username,
+      to: toUser,
+      text: input.value
+    }));
+
+    input.value = "";
+  }
+
+  document.getElementById("msg").addEventListener("input", () => {
+    ws.send(JSON.stringify({
+      type: "typing",
+      user: username
+    }));
+  });
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    // Chat messages
+    if (data.type === "message") {
+      addMessage(`${data.user}: ${data.text}`);
+    }
+
+    // Private messages
+    if (data.type === "private") {
+      addMessage(`(Private) ${data.user}: ${data.text}`);
+    }
+
+    // Online users
+    if (data.type === "users") {
+      const list = document.getElementById("users");
+      list.innerHTML = "";
+
+      data.list.forEach(user => {
+        const li = document.createElement("li");
+        li.textContent = user;
+        list.appendChild(li);
+      });
+    }
+
+    // Typing
+    if (data.type === "typing") {
+      const typing = document.getElementById("typing");
+      typing.textContent = `${data.user} is typing...`;
+
+      setTimeout(() => {
+        typing.textContent = "";
+      }, 1000);
+    }
+  };
+
+  function addMessage(msg) {
+    const li = document.createElement("li");
+    li.textContent = msg;
+    document.getElementById("chat").appendChild(li);
+  }
+</script>
+
+</body>
+</html>
